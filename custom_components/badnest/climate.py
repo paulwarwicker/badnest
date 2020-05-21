@@ -2,7 +2,10 @@
 from datetime import datetime
 import logging
 
-from homeassistant.components.climate import ClimateEntity
+try:
+    from homeassistant.components.climate import ClimateEntity
+except ImportError:
+    from homeassistant.components.climate import ClimateDevice as ClimateEntity
 from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_HIGH,
     ATTR_TARGET_TEMP_LOW,
