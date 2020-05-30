@@ -1,4 +1,5 @@
 import logging
+
 import requests
 import simplejson
 
@@ -22,6 +23,8 @@ KNOWN_BUCKET_TYPES = [
     "topaz",
     # Temperature sensors
     "kryptonite",
+    # Cameras
+    "quartz"
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,6 +54,7 @@ class NestAPI():
         self.thermostats = []
         self.temperature_sensors = []
         self.hotwatercontrollers = []
+        self.switches = []
         self.protects = []
         self.login()
         self._get_devices()
@@ -99,6 +103,9 @@ class NestAPI():
         r = self._session.post(url=URL_JWT, headers=headers, params=params)
         self._user_id = r.json()['claims']['subject']['nestId']['id']
         self._access_token = r.json()['jwt']
+        self._session.headers.update({
+            "Authorization": f"Basic {self._access_token}",
+        })
 
     def _login_dropcam(self):
         self._session.post(
@@ -106,28 +113,37 @@ class NestAPI():
             data={"access_token": self._access_token}
         )
 
-    def _get_cameras(self):
-        cameras = []
-
+    def _get_cameras_updates_pt2(self, sn):
         try:
+            headers = {
+                'User-Agent': USER_AGENT,
+                'X-Requested-With': 'XmlHttpRequest',
+                'Referer': 'https://home.nest.com/',
+                'cookie': f"user_token={self._access_token}"
+            }
             r = self._session.get(
-                f"{CAMERA_WEBAPI_BASE}/api/cameras."
-                + "get_owned_and_member_of_with_properties"
-            )
+                f"{CAMERA_WEBAPI_BASE}/api/cameras.get_with_properties?uuid="+sn, headers=headers)
 
-            for camera in r.json()["items"]:
-                cameras.append(camera['uuid'])
-                self.device_data[camera['uuid']] = {}
+            if str(r.json()["status"]).startswith(str(5)):
+                _LOGGER.debug('The Google proxy server sometimes gets a bit unhappy trying again')
+                sleep(4)
+                r = self._session.get(
+                    f"{CAMERA_WEBAPI_BASE}/api/cameras.get_with_properties?uuid="+sn, headers=headers)
 
-            return cameras
-        except requests.exceptions.RequestException as e:
+            sensor_data = r.json()["items"][0]
+
+            self.device_data[sn]['chime_state'] = \
+                sensor_data["properties"]["doorbell.indoor_chime.enabled"]
+
+        except (requests.exceptions.RequestException, IndexError) as e:
             _LOGGER.error(e)
-            _LOGGER.error('Failed to get cameras, trying again')
-            return self._get_cameras()
+            _LOGGER.error('Failed to get camera update pt2, trying again')
+            self._get_cameras_updates_pt2(sn)
         except KeyError:
-            _LOGGER.debug('Failed to get cameras, trying to log in again')
+            _LOGGER.debug('Failed to get camera update pt2, trying to log in again')
             self.login()
-            return self._get_cameras()
+            self._get_cameras_updates_pt2(sn)
+
 
     def _get_devices(self):
         try:
@@ -158,8 +174,11 @@ class NestAPI():
                     self.temperature_sensors.append(sn)
                     self.hotwatercontrollers.append(sn)
                     self.device_data[sn] = {}
-
-            self.cameras = self._get_cameras()
+                elif bucket.startswith('quartz.'):
+                    sn = bucket.replace('quartz.', '')
+                    self.cameras.append(sn)
+                    self.switches.append(sn)
+                    self.device_data[sn] = {}
 
         except requests.exceptions.RequestException as e:
             _LOGGER.error(e)
@@ -169,7 +188,6 @@ class NestAPI():
             _LOGGER.debug('Failed to get devices, trying to log in again')
             self.login()
             return self.get_devices()
-
 
     def _map_nest_protect_state(self, value):
         if value == 0:
@@ -323,27 +341,19 @@ class NestAPI():
                         sensor_data['current_temperature']
                     self.device_data[sn]['battery_level'] = \
                         sensor_data['battery_level']
-
-            # Cameras
-            for camera in self.cameras:
-                r = self._session.get(
-                    f"{API_URL}/dropcam/api/cameras/{camera}"
-                )
-                sensor_data = r.json()[0]
-                self.device_data[camera]['name'] = \
-                    sensor_data["name"]
-                self.device_data[camera]['is_online'] = \
-                    sensor_data["is_online"]
-                self.device_data[camera]['is_streaming'] = \
-                    sensor_data["is_streaming"]
-                self.device_data[camera]['battery_voltage'] = \
-                    sensor_data["rq_battery_battery_volt"]
-                self.device_data[camera]['ac_voltage'] = \
-                    sensor_data["rq_battery_vbridge_volt"]
-                self.device_data[camera]['location'] = \
-                    sensor_data["location"]
-                self.device_data[camera]['data_tier'] = \
-                    sensor_data["properties"]["streaming.data-usage-tier"]
+                # Cameras
+                elif bucket["object_key"].startswith(
+                        f"quartz.{sn}"):
+                    self.device_data[sn]['name'] = self._wheres[sensor_data['where_id']]
+                    self.device_data[sn]['model'] = \
+                        sensor_data["model"]
+                    self.device_data[sn]['streaming_state'] = \
+                        sensor_data["streaming_state"]
+                    if 'indoor_chime' in sensor_data["capabilities"]:
+                        self.device_data[sn]['indoor_chime'] = True
+                        self._get_cameras_updates_pt2(sn)
+                    else:
+                        self.device_data[sn]['indoor_chime'] = False
 
         except simplejson.errors.JSONDecodeError as e:
             _LOGGER.error(e)
@@ -604,14 +614,21 @@ class NestAPI():
             self.login()
             self.hotwater_set_boost(device_id, mode)
 
+
     def _camera_set_properties(self, device_id, property, value):
         if device_id not in self.cameras:
             return
 
         try:
+            headers = {
+                'User-Agent': USER_AGENT,
+                'X-Requested-With': 'XmlHttpRequest',
+                'Referer': 'https://home.nest.com/',
+                'cookie': f"user_token={self._access_token}"
+            }
             r = self._session.post(
                 f"{CAMERA_WEBAPI_BASE}/api/dropcams.set_properties",
-                data={property: value, "uuid": device_id},
+                data={property: value, "uuid": device_id}, headers=headers
             )
 
             return r.json()["items"]
@@ -629,22 +646,30 @@ class NestAPI():
         if device_id not in self.cameras:
             return
 
-        return self._set_properties(device_id, "streaming.enabled", "false")
+        return self._camera_set_properties(device_id, "streaming.enabled", "false")
 
     def camera_turn_on(self, device_id):
         if device_id not in self.cameras:
             return
 
-        return self._set_properties(device_id, "streaming.enabled", "true")
+        return self._camera_set_properties(device_id, "streaming.enabled", "true")
 
     def camera_get_image(self, device_id, now):
         if device_id not in self.cameras:
             return
 
         try:
+            headers = {
+                'User-Agent': USER_AGENT,
+                'X-Requested-With': 'XmlHttpRequest',
+                'Referer': 'https://home.nest.com/',
+                'cookie': f"user_token={self._access_token}"
+            }
             r = self._session.get(
                 f'{self._camera_url}/get_image?uuid={device_id}' +
-                f'&cachebuster={now}'
+                f'&cachebuster={now}',
+                headers=headers
+                # headers={"cookie": f'user_token={self._access_token}'},
             )
 
             return r.content
@@ -656,3 +681,16 @@ class NestAPI():
             _LOGGER.debug('Failed to get camera image, trying to log in again')
             self.login()
             return self.camera_get_image(device_id, now)
+
+    def camera_turn_chime_off(self, device_id):
+        if device_id not in self.switches:
+            return
+
+        return self._camera_set_properties(device_id, "doorbell.indoor_chime.enabled", "false")
+
+    def camera_turn_chime_on(self, device_id):
+        if device_id not in self.switches:
+            return
+
+        return self._camera_set_properties(device_id, "doorbell.indoor_chime.enabled", "true")
+
