@@ -11,7 +11,6 @@ from homeassistant.const import (
 from homeassistant.components.water_heater import (
     STATE_OFF,
     STATE_ON,
-    STATE_ECO,
     SUPPORT_OPERATION_MODE,
     SUPPORT_AWAY_MODE,
     ATTR_AWAY_MODE,
@@ -71,7 +70,6 @@ async def async_setup_platform(hass,
 
     def hot_water_boost(service):
         """Handle the service call."""
-
         entity_ids = service.data[ATTR_ENTITY_ID]
         minutes = service.data[ATTR_TIME_PERIOD]
         timeToEnd = int(time.mktime(datetime.timetuple(utcnow()))+(minutes*60))

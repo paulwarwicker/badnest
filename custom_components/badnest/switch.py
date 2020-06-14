@@ -34,9 +34,9 @@ async def async_setup_platform(hass,
 
 
 class ChimeSwitch(SwitchEntity):
+
     """
-    Creates a switch to turn the Nest Hello doorbell cameras indoor chime
-    on or off.
+    Switch to turn the Nest Hello doorbell cameras indoor chime on or off.
     """
 
     def __init__(self, device_id, api):
