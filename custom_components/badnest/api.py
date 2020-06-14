@@ -31,12 +31,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class NestAPI():
-    def __init__(self,
-                 user_id,
-                 access_token,
-                 issue_token,
-                 cookie,
-                 region):
+    def __init__(self, user_id, access_token, issue_token, cookie, region):
+        """Badnest Google Nest API interface."""
         self.device_data = {}
         self._wheres = {}
         self._user_id = user_id
@@ -61,15 +57,19 @@ class NestAPI():
         self.update()
 
     def __getitem__(self, name):
+        """Get attribute."""
         return getattr(self, name)
 
     def __setitem__(self, name, value):
+        """Set attribute."""
         return setattr(self, name, value)
 
     def __delitem__(self, name):
+        """Delete attribute."""
         return delattr(self, name)
 
     def __contains__(self, name):
+        """Has attribute."""
         return hasattr(self, name)
 
     def login(self):
@@ -189,7 +189,8 @@ class NestAPI():
             self.login()
             return self.get_devices()
 
-    def _map_nest_protect_state(self, value):
+    @classmethod
+    def _map_nest_protect_state(cls, value):
         if value == 0:
             return "Ok"
         elif value == 1 or value == 2:

@@ -1,13 +1,6 @@
 """Component to interface with switches that can be controlled remotely."""
-from datetime import timedelta
 import logging
-
-from homeassistant.const import (
-    SERVICE_TOGGLE,
-    SERVICE_TURN_OFF,
-    SERVICE_TURN_ON,
-    STATE_ON,
-)
+from .const import DOMAIN
 from homeassistant.components.switch import (
     DEVICE_CLASS_SWITCH,
 )
@@ -16,14 +9,6 @@ try:
     from homeassistant.components.switch import SwitchEntity
 except ImportError:
     from homeassistant.components.switch import SwitchDevice as SwitchEntity
-
-
-
-from homeassistant.helpers.entity_component import EntityComponent
-from homeassistant.core import callback
-import homeassistant.util.dt as dt_util
-
-from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,9 +34,9 @@ async def async_setup_platform(hass,
 
 
 class ChimeSwitch(SwitchEntity):
+
     """
-    Creates a switch to turn the Nest Hello doorbell cameras indoor chime
-    on or off.
+    Switch to turn the Nest Hello doorbell cameras indoor chime on or off.
     """
 
     def __init__(self, device_id, api):

@@ -1,4 +1,4 @@
-"""This component provides basic support for Foscam IP cameras."""
+"""Provides support for Nest cameras."""
 import logging
 from datetime import timedelta
 
@@ -34,6 +34,7 @@ async def async_setup_platform(hass,
 
 
 class NestCamera(Camera):
+
     """An implementation of a Nest camera."""
 
     def __init__(self, uuid, api):
