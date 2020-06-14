@@ -84,16 +84,16 @@ Google Login support added with many thanks to: chrisjshull from <https://github
 
 The values of `"issue_token"` and `"cookie"` are specific to your Google Account. To get them, follow these steps (only needs to be done once, as long as you stay logged into your Google Account).
 
-1.   Open a Chrome browser tab in Incognito Mode (or clear your cache).
-1.   Open Developer Tools (View/Developer/Developer Tools).
-1.   Click on 'Network' tab. Make sure 'Preserve Log' is checked.
-1.   In the 'Filter' box, enter `issueToken`
-1.   Go to `home.nest.com`, and click 'Sign in with Google'. Log into your account.
-1.   One network call (beginning with `iframerpc`) will appear in the Dev Tools window. Click on it.
-1.   In the Headers tab, under General, copy the entire `Request URL` (beginning with `https://accounts.google.com`, ending with `nest.com`). This is your `"issue_token"` in `configuration.yaml`.
-1.   In the 'Filter' box, enter `oauth2/iframe`
-1.   Several network calls will appear in the Dev Tools window. Click on the last `iframe` call.
-1.   In the Headers tab, under Request Headers, copy the entire `cookie` (beginning `OCAK=...` - **include the whole string which is several lines long and has many field/value pairs** - do not include the `cookie:` name). This is your `"cookie"` in `configuration.yaml`.
+-   Open a Chrome browser tab in Incognito Mode (or clear your cache).
+-   Open Developer Tools (View/Developer/Developer Tools).
+-   Click on 'Network' tab. Make sure 'Preserve Log' is checked.
+-   In the 'Filter' box, enter `issueToken`
+-   Go to `home.nest.com`, and click 'Sign in with Google'. Log into your account.
+-   One network call (beginning with `iframerpc`) will appear in the Dev Tools window. Click on it.
+-   In the Headers tab, under General, copy the entire `Request URL` (beginning with `https://accounts.google.com`, ending with `nest.com`). This is your `"issue_token"` in `configuration.yaml`.
+-   In the 'Filter' box, enter `oauth2/iframe`
+-   Several network calls will appear in the Dev Tools window. Click on the last `iframe` call.
+-   In the Headers tab, under Request Headers, copy the entire `cookie` (beginning `OCAK=...` - **include the whole string which is several lines long and has many field/value pairs** - do not include the `cookie:` name). This is your `"cookie"` in `configuration.yaml`.
 
 ## Notes
 
