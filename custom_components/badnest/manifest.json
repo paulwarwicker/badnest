@@ -6,6 +6,5 @@
   "codeowners": [
     "@badguy99, @USA-RedDragon"
   ],
-  "homeassistant": "0.97.0",
   "requirements": []
 }
