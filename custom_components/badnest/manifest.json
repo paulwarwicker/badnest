@@ -4,7 +4,8 @@
   "documentation": "https://custom-components.github.io/badnest",
   "dependencies": [],
   "codeowners": [
-    "@badguy99, @USA-RedDragon"
+    "@badguy99"
   ],
-  "requirements": []
+  "requirements": [],
+  "version": 5.0.0
 }
