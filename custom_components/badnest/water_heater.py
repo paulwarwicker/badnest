@@ -3,7 +3,7 @@ import time
 import voluptuous as vol
 
 from datetime import datetime
-from homeassistant.util.dt import utcnow
+from homeassistant.util.dt import now
 from homeassistant.helpers import config_validation as cv
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -72,7 +72,7 @@ async def async_setup_platform(hass,
         """Handle the service call."""
         entity_ids = service.data[ATTR_ENTITY_ID]
         minutes = service.data[ATTR_TIME_PERIOD]
-        timeToEnd = int(time.mktime(datetime.timetuple(utcnow()))+(minutes*60))
+        timeToEnd = int(time.mktime(datetime.timetuple(now()))+(minutes*60))
         mode = service.data[ATTR_BOOST_MODE]
         _LOGGER.debug('HW boost mode: {} ending: {}'.format(mode, timeToEnd))
 
