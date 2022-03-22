@@ -31,6 +31,7 @@ async def async_setup_platform(hass,
     for sensor in api['temperature_sensors']:
         _LOGGER.info(f"Adding nest temp sensor uuid: {sensor}")
         temperature_sensors.append(NestTemperatureSensor(sensor, api))
+        temperature_sensors.append(NestWaterTemperatureSensor(sensor, api))
 
     async_add_entities(temperature_sensors)
 
@@ -91,6 +92,57 @@ class NestTemperatureSensor(Entity):
             ATTR_BATTERY_LEVEL:
                 self.device.device_data[self.device_id]['battery_level']
         }
+
+
+class NestWaterTemperatureSensor(Entity):
+
+    """Implementation of the Nest Hot Water Sensor."""
+
+    def __init__(self, device_id, api):
+        """Initialize the sensor."""
+        self._name = "Nest Hot Water Sensor"
+        self._unit_of_measurement = TEMP_CELSIUS
+        self.device_id = device_id
+        self.device = api
+
+    @property
+    def unique_id(self):
+        """Return an unique ID."""
+        return self.device_id + "_hw"
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return "{0} Hot Water".format(
+          self.device.device_data[self.device_id]['name'])
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return self.device.device_data[self.device_id]['current_water_temperature']
+
+    @property
+    def device_class(self):
+        """Return the device class of this entity."""
+        return DEVICE_CLASS_TEMPERATURE
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement of this entity, if any."""
+        return self._unit_of_measurement
+
+    def update(self):
+        """Get the latest data from the DHT and updates the states."""
+        self.device.update()
+
+    @property
+    def device_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            ATTR_BATTERY_LEVEL:
+                self.device.device_data[self.device_id]['battery_level']
+        }
+
 
 
 class NestProtectSensor(Entity):

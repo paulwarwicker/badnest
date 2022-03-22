@@ -304,6 +304,8 @@ class NestAPI():
                         sensor_data["hot_water_boiling_state"]
                     self.device_data[sn]['hot_water_away_active'] = \
                         sensor_data["hot_water_away_active"]
+                    self.device_data[sn]['current_water_temperature'] = \
+                        sensor_data["current_water_temperature"]
                     # - Status/Settings
                     self.device_data[sn]['hot_water_timer_mode'] = \
                         sensor_data["hot_water_mode"]
@@ -311,6 +313,8 @@ class NestAPI():
                         sensor_data["hot_water_away_enabled"]
                     self.device_data[sn]['hot_water_boost_setting'] = \
                         sensor_data["hot_water_boost_time_to_end"]
+                    self.device_data[sn]['hot_water_temperature'] = \
+                        sensor_data["hot_water_temperature"]
 
                 # Protect
                 elif bucket["object_key"].startswith(
