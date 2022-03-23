@@ -304,6 +304,10 @@ class NestAPI():
                         sensor_data["hot_water_boiling_state"]
                     self.device_data[sn]['hot_water_away_active'] = \
                         sensor_data["hot_water_away_active"]
+                    self.device_data[sn]['current_water_temperature'] = \
+                        sensor_data["current_water_temperature"]
+                    self.device_data[sn]['heat_link_hot_water_type'] = \
+                        sensor_data["heat_link_hot_water_type"]
                     # - Status/Settings
                     self.device_data[sn]['hot_water_timer_mode'] = \
                         sensor_data["hot_water_mode"]
@@ -311,6 +315,8 @@ class NestAPI():
                         sensor_data["hot_water_away_enabled"]
                     self.device_data[sn]['hot_water_boost_setting'] = \
                         sensor_data["hot_water_boost_time_to_end"]
+                    self.device_data[sn]['hot_water_temperature'] = \
+                        sensor_data["hot_water_temperature"]
 
                 # Protect
                 elif bucket["object_key"].startswith(
@@ -615,6 +621,34 @@ class NestAPI():
             self.login()
             self.hotwater_set_boost(device_id, mode)
 
+    def hotwater_set_temperature(self, device_id, temp, temp_high=None):
+        if device_id not in self.hotwatercontrollers:
+            _LOGGER.error('device is not a hotwatercontroller')
+            return
+
+        try:
+            self._session.post(
+                f"{self._czfe_url}/v5/put",
+                json={
+                    "objects": [
+                        {
+                            "object_key": f'device.{device_id}',
+                            "op": "MERGE",
+                            "value": {"hot_water_temperature": temp},
+                        }
+                    ]
+                },
+                headers={"Authorization": f"Basic {self._access_token}"},
+            )
+        except requests.exceptions.RequestException as e:
+            _LOGGER.error(e)
+            _LOGGER.error('Failed to set hot water temperature, trying again')
+            self.thermostat_set_temperature(device_id, temp, temp_high)
+        except KeyError:
+            _LOGGER.debug('Failed to set hot water temperature, trying to log in again')
+            self.login()
+            self.thermostat_set_temperature(device_id, temp, temp_high)
+
 
     def _camera_set_properties(self, device_id, property, value):
         if device_id not in self.cameras:
@@ -694,4 +728,5 @@ class NestAPI():
             return
 
         return self._camera_set_properties(device_id, "doorbell.indoor_chime.enabled", "true")
+
 
