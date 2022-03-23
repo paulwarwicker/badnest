@@ -42,7 +42,6 @@ ATTR_HEATING_ACTIVE = 'heating_active'
 ATTR_AWAY_MODE_ACTIVE = 'away_mode_active'
 
 
-SUPPORTED_FEATURES = SUPPORT_OPERATION_MODE | SUPPORT_AWAY_MODE | SUPPORT_BOOST_MODE | SUPPORT_TARGET_TEMPERATURE
 NEST_TO_HASS_MODE = {"schedule": STATE_SCHEDULE, "off": STATE_OFF}
 HASS_TO_NEST_MODE = {STATE_SCHEDULE: "schedule", STATE_OFF: "off"}
 NEST_TO_HASS_STATE = {True: STATE_ON, False: STATE_OFF}
@@ -124,6 +123,10 @@ class NestWaterHeater(WaterHeaterEntity):
     @property
     def supported_features(self):
         """Return the list of supported features."""
+        if self.device.device_data[self.device_id]['heat_link_hot_water_type'] == 'opentherm':
+            SUPPORTED_FEATURES = SUPPORT_OPERATION_MODE | SUPPORT_AWAY_MODE | SUPPORT_BOOST_MODE | SUPPORT_TARGET_TEMPERATURE
+        else:
+            SUPPORTED_FEATURES = SUPPORT_OPERATION_MODE | SUPPORT_AWAY_MODE | SUPPORT_BOOST_MODE
         return SUPPORTED_FEATURES
 
     @property
@@ -206,8 +209,8 @@ class NestWaterHeater(WaterHeaterEntity):
             data[ATTR_HEATING_ACTIVE] = False
 
 
-        # Set target temperature
         if supported_features & SUPPORT_TARGET_TEMPERATURE:
+            # Set target temperature
             data[ATTR_TEMPERATURE] = show_temp(
                     self.hass,
                     self.device.device_data[self.device_id]['hot_water_temperature'],
@@ -215,8 +218,7 @@ class NestWaterHeater(WaterHeaterEntity):
                     self.precision)
 
 
-        # Set current target temperature
-        if supported_features & SUPPORT_TARGET_TEMPERATURE:
+            # Set current target temperature
             data[ATTR_CURRENT_TEMPERATURE] = show_temp(
                     self.hass,
                     self.device.device_data[self.device_id]['current_water_temperature'],
@@ -292,6 +294,18 @@ class NestWaterHeater(WaterHeaterEntity):
     def update(self):
         """Get the latest data from the Hot Water Sensor and updates the states."""
         self.device.update()
+
+    def set_temperature(self, **kwargs):
+        """Set new target temperature."""
+        _LOGGER.debug("Setting water temperature")
+        temp = None
+        temp = kwargs.get(ATTR_TEMPERATURE)
+        if temp is not None:
+            self.device.hotwater_set_temperature(
+                self.device_id,
+                temp,
+            )
+
 
 
 

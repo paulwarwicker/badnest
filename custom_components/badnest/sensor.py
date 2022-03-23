@@ -31,9 +31,16 @@ async def async_setup_platform(hass,
     for sensor in api['temperature_sensors']:
         _LOGGER.info(f"Adding nest temp sensor uuid: {sensor}")
         temperature_sensors.append(NestTemperatureSensor(sensor, api))
-        temperature_sensors.append(NestWaterTemperatureSensor(sensor, api))
 
     async_add_entities(temperature_sensors)
+
+    water_temperature_sensors = []
+    for sensor in api['hotwatercontrollers']:
+        if api.device_data[sensor]["heat_link_hot_water_type"] == "opentherm":
+            _LOGGER.info(f"Adding nest waterheater sensor uuid: {sensor}")
+            water_temperature_sensors.append(NestWaterTemperatureSensor(sensor, api))
+
+    async_add_entities(water_temperature_sensors)
 
     protect_sensors = []
     _LOGGER.info("Adding protect sensors")
