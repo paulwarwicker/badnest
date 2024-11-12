@@ -9,7 +9,6 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_TEMPERATURE,
-    CELSIUS
 )
 
 from homeassistant.helpers.temperature import display_temp as show_temp
@@ -27,6 +26,7 @@ from homeassistant.components.water_heater import (
 )
 
 from homeassistant.components.water_heater import WaterHeaterEntity
+from homeassistant.const import UnitOfTemperature
 
 from .const import (
     DOMAIN,
@@ -107,7 +107,7 @@ class NestWaterHeater(WaterHeaterEntity):
         self._name = "Nest Hot Water Heater"
         self.device_id = device_id
         self.device = api
-        self._attr_temperature_unit = CELSIUS
+        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
 
     @property
     def unique_id(self):
